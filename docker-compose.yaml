@@ -3,7 +3,7 @@ version: '2'
 services:
     
   dpagent:
-    image: dpagent
+    image: entmike/dpagent:2.4
     hostname: dpagent
           
   hxehost:
@@ -12,8 +12,19 @@ services:
     volumes:
       - hxedev:/hana/mounts
     command: --agree-to-sap-license --master-password ${HXE_MASTER_PASSWORD}
-    
+  
+  oracle:
+    image: store/oracle/database-enterprise:12.2.0.1-slim
+    hostname: oracle
+    volumes:
+      - oracle-db:/ORCL
+
 volumes:
+
   hxedev:
     external:
       name: hana-express
+      
+  oracle-db:
+    external:
+      name: oracle-db

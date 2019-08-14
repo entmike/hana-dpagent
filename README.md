@@ -4,7 +4,13 @@ Builds a Docker Image with Data Provisioning Agent pre-installed with some commo
 
 ## Prerequisites
 
-- Download and place `sapjvm-8.1.055-linux-x64.zip` in the files directory.  The ZIP files is too big for Github and when I tried using Git LFS it was a horrible experience for me.
+- Download and place the following files in the files directory.  I technically cannot redistribute them in the repo, and they are large binaries anyway.
+
+   - In `/files` copy `HXEDownloadManager_linux.bin` - Follow the [tutorial here](https://developers.sap.com/tutorials/hxe-ua-register.html) or Google for it.
+   - In `/files/sdi-libs` copy your database JDBC JARs.  (Google them or find on Microsoft/Oracle/etc sites) i.e:
+     
+     - `sqljdbc4.jar` Microsoft SQL Server JAR
+     - `ojdbc7.jar` Oracle DB JAR
 
 ## Building
 
