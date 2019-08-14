@@ -1,0 +1,19 @@
+version: '2'
+    
+services:
+    
+  dpagent:
+    image: dpagent
+    hostname: dpagent
+          
+  hxehost:
+    image: store/saplabs/hanaexpress:2.00.036.00.20190223.1
+    hostname: hxe
+    volumes:
+      - hxedev:/hana/mounts
+    command: --agree-to-sap-license --master-password ${HXE_MASTER_PASSWORD}
+    
+volumes:
+  hxedev:
+    external:
+      name: hana-express
