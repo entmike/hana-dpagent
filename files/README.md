@@ -1,0 +1,1 @@
+Copy HXEDownloadManager_linux.bin here before building Docker Image
