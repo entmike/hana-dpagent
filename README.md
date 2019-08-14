@@ -19,7 +19,7 @@ If you are playing with SAP HANA Express Docker container and want to quickly sp
 ## Building
 
    1. `git clone https://github.com/entmike/hana-dpagent.git`
-   2. Copy `sapjvm-8.1.055-linux-x64.zip` to `files` directory.
+   2. Copy the files mentioned in the prerequisites to the correct folders.
    3. `cd hana-dpagent`
    4. `docker build -t dpagent-image .`
 
