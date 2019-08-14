@@ -2,6 +2,10 @@
 
 Builds a Docker Image with Data Provisioning Agent pre-installed with some common JAR files included.  Since `HXEDownloadManager_linux.bin` is used to actually download the software, it will pull whatever the latest is available from SAP (for instance, 2.0 SP3 or SP4 etc)  So tag your builds with something appropriate if needed.
 
+## Purpose
+
+If you are playing with SAP HANA Express Docker container and want to quickly spin up a Data Provisioning Agent without bothering with a VM and copying JARs and installing DP Agent, the following build will result in a Data Provisioning Agent which you can then use with HANA Express.
+
 ## Prerequisites
 
 - Download and place the following files in the files directory.  I technically cannot redistribute them in the repo, and they are large binaries anyway.
@@ -19,7 +23,17 @@ Builds a Docker Image with Data Provisioning Agent pre-installed with some commo
    3. `cd hana-dpagent`
    4. `docker build -t dpagent-image .`
 
+## Running in Docker
+
+`docker run -d -p 5050:5050 --rm --name dpagent dpagent-image`
+
+## Accessing the Data Provisioning Agent CLI configuration menu
+
+`docker exec -ti dpagent bash -c "/home/dpagent/dataprovagent/bin/agentcli.sh --configAgent"`
+
 ## Running Example in Docker Compose
+
+Realistically in a containerized scenario, you'll simply just want to have DP Agent and HXE running in same Docker network.  Docker Compose makes this simple and easy for the 2 containers to communicate internally.
 
 Note: This example assumes:
 
