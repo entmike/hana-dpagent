@@ -3,7 +3,7 @@ version: '2'
 services:
     
   dpagent:
-    image: entmike/dpagent:2.4
+    image: dpagent-image
     hostname: dpagent
           
   hxehost:

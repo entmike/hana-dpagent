@@ -21,7 +21,10 @@ Builds a Docker Image with Data Provisioning Agent pre-installed with some commo
 
 ## Running Example in Docker Compose
 
-Note: This example assumes you are running an existing HANA Express (2.0 SP3 in this case) with a hostname of `hxe` and a pre-existing docker volume named `hana-express`.
+Note: This example assumes:
+
+  1. You built your Docker Image called `dpagent-image`
+  2. You are running an existing HANA Express (2.0 SP3 in this case) with a hostname of `hxe` and a pre-existing docker volume named `hana-express`.
 
 ```yaml
 version: '2'
