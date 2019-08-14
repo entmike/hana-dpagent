@@ -23,7 +23,7 @@ version: '2'
 services:
     
   dpagent:
-    image: dpagent
+    image: dpagent-image
     hostname: dpagent
           
   hxehost:
