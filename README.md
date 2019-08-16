@@ -188,17 +188,18 @@ With your HANA Express Docker container, DP Agent container, and Oracle DB Conta
 1. In HANA Studio, expand the Provisioning section of your HANA Express system, and right-click on Remote Sources and select 'New Remote Source...'
 
 2. Provide the following values for the properties listed below:
-   |Property|Value|
-   |---|---|
-   |Source Name|`oracle` or whatever you want|
-   |Adapter Name|`Oracle Log Reader`|
-   |Source Location|`agent (dpagent_dpagent)`|
-   |Host|`oracle`|
-   |Port Number|`1521`|
-   |Service Name|`ORCLPDB1.localdomain`|
-   |Credentials Mode|`Technical User`|
-   |All User Name Fields in Red (Case Sensitive)|`DPTEST`|
-   |All Password Fields in Red|`HXEHana1`|
+
+   | Property | Value |
+   | --- | --- |
+   | Source Name | `oracle` or whatever you want |
+   | Adapter Name | `Oracle Log Reader` |
+   | Source Location | `agent (dpagent_dpagent)` |
+   | Host | `oracle` |
+   | Port Number | `1521` |
+   | Service Name | `ORCLPDB1.localdomain` |
+   | Credentials Mode | `Technical User` |
+   | All User Name Fields in Red (Case Sensitive) | `DPTEST` |
+   | All Password Fields in Red | `HXEHana1` |
 
    Press Control+S to Save and ensure that you get a message stating "Connection to remote source established".
 
