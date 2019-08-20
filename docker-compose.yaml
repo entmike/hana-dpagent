@@ -1,30 +1,61 @@
 version: '2'
     
 services:
-    
+  # Data Provisioning Agent Image
   dpagent:
     image: dpagent-image
+    container_name: dpagent
     hostname: dpagent
-          
+
+  # SAP HANA Express DB-only Image
   hxehost:
-    image: store/saplabs/hanaexpress:2.00.036.00.20190223.1
+    image: store/saplabs/hanaexpress:2.00.040.00.20190729.1
+    container_name: hxe
     hostname: hxe
+    ports:
+      - 39041:39041 
+      - 39017:39017
+      - 39013:39013
+      - 39015:39015
+      - 8090:8090
     volumes:
       - hxedev:/hana/mounts
-    command: --agree-to-sap-license --master-password ${HXE_MASTER_PASSWORD}
-  
+      - /c/Users/RHOWLES/data/hana-packages:/usr/sap/HXE/SYS/global/hdb/content
+    command: --agree-to-sap-license --master-password HXEHana1
+
+  # Oracle 12.2 Slim DB Image
   oracle:
     image: store/oracle/database-enterprise:12.2.0.1-slim
+    container_name: oracle
     hostname: oracle
+    ports:
+      - 1521:1521
     volumes:
       - oracle-db:/ORCL
 
-volumes:
+  # Microsoft SQL Server Image
+  mssql:
+    image: mcr.microsoft.com/mssql/server:2017-latest-ubuntu
+    container_name: mssql
+    hostname: mssql
+    environment:
+      ACCEPT_EULA: Y
+      SA_PASSWORD: "HXEHana1"
+    ports:
+      - "1433:1433/tcp"
+    volumes:
+      - mssql-db:/var/opt/mssql
 
+# Persistent Volumes
+volumes:
   hxedev:
     external:
-      name: hana-express
+      name: hxedev
       
   oracle-db:
     external:
       name: oracle-db
+
+  mssql-db:
+    external:
+      name: mssql-db
