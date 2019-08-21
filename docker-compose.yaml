@@ -3,7 +3,7 @@ version: '2'
 services:
   # Data Provisioning Agent Image
   dpagent:
-    image: dpagent-image
+    image: registry.howles.cloud/dpagent:2.4
     container_name: dpagent
     hostname: dpagent
 
@@ -21,7 +21,6 @@ services:
     volumes:
       - hxedev:/hana/mounts
       - /c/Users/RHOWLES/data/hana-packages:/usr/sap/HXE/SYS/global/hdb/content
-    command: --agree-to-sap-license --master-password HXEHana1
 
   # Oracle 12.2 Slim DB Image
   oracle:
@@ -48,9 +47,9 @@ services:
 
 # Persistent Volumes
 volumes:
-  hxedev:
+  hana-db:
     external:
-      name: hxedev
+      name: hana-db
       
   oracle-db:
     external:

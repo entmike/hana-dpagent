@@ -25,7 +25,7 @@ If you are playing with SAP HANA Express Docker container and want to quickly sp
 
 ## Bare Bones example of just running Data Provisioning Image
 
-The following is a very bare-bones simple example of how to run the Data Provisioning Agent in a single docker container.  In this example, the container is removed after it is stopped and no data or logs are persisted.
+The following is a very bare-bones simple example of how to run the Data Provisioning Agent in a single docker container.  In this example, the container is removed after it is stopped and no data, configuration files, or logs are persisted.
 
 ### Start a container in Docker
 
@@ -42,9 +42,12 @@ Realistically in a containerized scenario, you'll simply just want to have DP Ag
 Note: This example assumes:
 
   1. You built your Docker Image called `dpagent-image`
-  2. You are running an existing HANA Express (2.0 SP3 in this case) with a hostname of `hxe` and a pre-existing docker volume named `hana-express`.
+  
+  2. You are running an existing HANA Express (2.0 SP4 in this case) with a hostname of `hxe` and a pre-existing docker volume named `hana-db`.
 
-     *(Simply run `docker volume create hana-express` if you have not)*
+     *(Simply run `docker volume create hana-db` if you have not)*
+
+  3. You have a `dpserver` running on the `HXE` tenant DB.
 
 ```yaml
 version: '2'
@@ -53,19 +56,20 @@ services:
 
   dpagent:
     image: dpagent-image
+    container_name: dpagent
     hostname: dpagent
 
-  hxehost:
-    image: store/saplabs/hanaexpress:2.00.036.00.20190223.1
+  hxe:
+    image: store/saplabs/hanaexpress:2.00.040.00.20190729.1
+    container_name: hxe
     hostname: hxe
     volumes:
-      - hxedev:/hana/mounts
-    command: --agree-to-sap-license --master-password ${HXE_MASTER_PASSWORD}
+      - hana-db:/hana/mounts
 
 volumes:
-  hxedev:
+  hana-db:
     external:
-      name: hana-express
+      name: hana-db
 ```
 
 ### Configuring Data Provisioning Agent and Adapter(s) from CLI in this Docker Compose Stack
@@ -74,14 +78,14 @@ To configure the DP Agent via the CLI Tool, read [instructions here](DPAgentConf
 
 ## Running Example in Docker Compose with Oracle DB
 
-This next example illustrates a similar Docker Compose stack with the addition of an Oracle 12 Database that can be used by the DP Agent and HANA Express Containers for an end-to-end sandbox to play with Data Provisioning Agent and SDA.  After all, this example Docker Compose stack is not a complete self-contained working example if it did not contain an example Data Source, right?
+This next example illustrates a similar Docker Compose stack with the addition of an Oracle 12 Database that can be used by the DP Agent and HANA Express Containers for an end-to-end sandbox to play with Data Provisioning Agent and SDA.  (After all, this example Docker Compose stack is not a complete self-contained working example if it did not contain an example Data Source, right?)
 
 **Note:** This example assumes:
 
   1. You built your Docker Image called `dpagent-image`
-  2. You are running an existing HANA Express (2.0 SP3 in this case) with a hostname of `hxe` and a pre-existing docker volume named `hana-express`.
+  2. You are running an existing HANA Express (2.0 SP4 in this case) with a hostname of `hxe` and a pre-existing docker volume named `hana-db`.
   
-     *(Simply run `docker volume create hana-express` if you have not)*
+     *(Simply run `docker volume create hana-db` if you have not)*
 
   3. You have a pre-existing docker volume named `oracle-db`.
 
@@ -96,13 +100,15 @@ services:
 
   dpagent:
     image: dpagent-image
+    container_name: dpagent
     hostname: dpagent
 
   hxe:
-    image: store/saplabs/hanaexpress:2.00.036.00.20190223.1
+    image: store/saplabs/hanaexpress:2.00.040.00.20190729.1
+    container_name: hxe
     hostname: hxe
     volumes:
-      - hxedev:/hana/mounts
+      - hana-db:/hana/mounts
 
     ports:
       - 39041:39041
@@ -110,10 +116,10 @@ services:
       - 39013:39013
       - 39015:39015
       - 8090:8090
-    command: --agree-to-sap-license --master-password ${HXE_MASTER_PASSWORD}
 
   oracle:
     image: store/oracle/database-enterprise:12.2.0.1-slim
+    container_name: oracle
     hostname: oracle
     ports:
       - 1521:1521
@@ -121,9 +127,9 @@ services:
       - oracle-db:/ORCL
 
 volumes:
-  hxedev:
+  hana-db:
     external:
-      name: hxedev
+      name: hana-db
 
   oracle-db:
     external:
@@ -131,219 +137,332 @@ volumes:
 
 ```
 
-### Option 1: Connecting to Oracle DB Container's ORCLPDB1 in sqlplus as sysdba
+## Connecting to your Oracle Container's DB
+
+The Oracle Docker image comes with a container database (`ORCLCDB`) and a pluggable database (`ORCLPDB1`.)  Data Provisioning Agent can communicate with either, however if you wish to use realtime replication, you must connect to the container database (`ORCLCDB`), as Oracle's LogMiner does not work with pluggable databases.  Therefore, for sake of this use case, we will cover primarily the container database.
+
+### Option 1: Connecting to Oracle DB Container's `ORCLCDB` (pluggable DB) in sqlplus as sysdba
+
+- sqlplus method
+
+   ```bash
+   docker exec -ti oracle /bin/bash
+   sqlplus sys/Oradoc_db1@ORCLCDB as sysdba
+   ```
+
+- sqldeveloper method
+   | Property | Value |
+   | --- | --- |
+   | Connection Name | Whatever you want |
+   | Username | `sys` (Case-sensitive) |
+   | Password | `Oradoc_db1` |
+   | Role | `SYSDBA` |
+   | Hostname | `192.168.99.100` or `localhost` or wherever your container runs |
+   | Service name | `ORCLCDB.localdomain` |
+
+### Option 2: Connecting to Oracle DB Container's `ORCLPDB1` (pluggable DB) in sqlplus as sysdba
+
+This is simply for reference as we will not be using this pluggable DB in any examples.
+
+- sqlplus method
+
+   ```bash
+   docker exec -ti oracle /bin/bash
+   sqlplus sys/Oradoc_db1@ORCLPDB1 as sysdba
+   ```
+
+- sqldeveloper method
+   | Property | Value |
+   | --- | --- |
+   | Connection Name | Whatever you want |
+   | Username | `sys` (Case-sensitive) |
+   | Password | `Oradoc_db1` |
+   | Role | `SYSDBA` |
+   | Hostname | `192.168.99.100` or `localhost` or wherever your container runs |
+   | Service name | `ORCLPDB1.localdomain` |
+
+### Configure DB for Realtime Replication
+
+Before we can use realtime replication, we need to enable archive logs on the Container DB.  The following commands **must** be run from `sqlplus` as `sys` on `ORCLCDB`.
 
 ```bash
-docker exec -ti hana-dp_oracle_1 /bin/bash
-sqlplus sys/Oradoc_db1@ORCLPDB1 as sysdba
+docker exec -ti oracle /bin/bash
+mkdir /ORCL/archivelogs
+sqlplus sys/Oradoc_db1@ORCLCDB as sysdba
+SQL*Plus: Release 12.2.0.1.0 Production on Wed Aug 21 13:46:53 2019
+
+Copyright (c) 1982, 2016, Oracle.  All rights reserved.
+
+Last Successful login time: Wed Aug 21 2019 13:45:53 +00:00
+
+Connected to:
+Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
 ```
 
-### Option 2: Set Up a sqldeveloper Connection as sysdba
+Type `SHUTDOWN IMMEDIATE;`
 
-| Property | Value |
-| --- | --- |
-| Connection Name | Whatever you want |
-| Username | `sys` (Case-sensitive) |
-| Password | `Oradoc_db1` |
-| Hostname | `192.168.99.100` or `localhost` or wherever your container runs |
-| Service name | `ORCLPDB1.localdomain` |
+```bash
+SQL> SHUTDOWN IMMEDIATE;
+Database closed.
+Database dismounted.
+ORACLE instance shut down.
+ERROR:
+ORA-12514: TNS:listener does not currently know of service requested in connect
+descriptor
 
-### Set up Oracle User
 
-Once your Docker Compose stack is running, the following SQL in eithe sqlplus or sqldeveloper:
+Warning: You are no longer connected to ORACLE.
+```
+
+Type `CONNECT SYS/Oradoc_db1 AS SYSDBA;`
+
+```bash
+SQL> CONNECT sys/Oradoc_db1 AS SYSDBA;
+Connected to an idle instance.
+```
+
+Type `STARTUP MOUNT;`
+
+```bash
+SQL> STARTUP MOUNT;
+ORACLE instance started.
+                            8792536 bytes
+Variable SizeGlobal Area  352323112 bytes
+Database Buffers            7983104 bytes
+Database mounted.
+```
+
+Type `ALTER DATABASE ARCHIVELOG;`
+
+```bash
+SQL> ALTER DATABASE ARCHIVELOG;
+
+Database altered.
+```
+
+Type `ALTER DATABASE OPEN;`
+
+```bash
+SQL> ALTER DATABASE OPEN;
+
+Database altered.
+```
+
+Execute the following to specify a local directory as the archive log directory (a.k.a archive destination.)
+
+`ALTER SYSTEM SET LOG_ARCHIVE_DEST_1='LOCATION=/ORCL/archivelogs';`
+
+```bash
+SQL> ALTER SYSTEM SET LOG_ARCHIVE_DEST_1='LOCATION=/ORCL/archivelogs';
+
+System altered.
+```
+
+Enable minimal database-level supplemental logging
+
+`ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;`
+
+```bash
+SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
+
+Database altered.
+```
+
+We will be setting Oracle LogReader Adapter preference for Oracle supplemental logging level to `database` so we need to enable PRIMARY KEY and UNIQUE KEY database-level supplemental logging:
+
+Type `ALTER DATABASE ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY, UNIQUE) COLUMNS;`
+
+```bash
+SQL> ALTER DATABASE ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY, UNIQUE) COLUMNS;
+
+Database altered.
+```
+
+Type `ALTER SYSTEM SET db_securefile='PERMITTED';`
+
+```bash
+SQL> ALTER SYSTEM SET db_securefile='PERMITTED';
+
+System altered.
+```
+
+Type `exit` to exit `sqlplus`.
+
+```bash
+SQL> exit
+Disconnected from Oracle Database 12c Enterprise Edition Release 12.2.0.1.0 - 64bit Production
+```
+
+### Set up Oracle Replication the Easy Way
+
+For the hard way, see here.
+
+1. Connect to your Data Provisioning Agent Container and run the Replication Setup tool.
+
+   `docker exec -ti dpagent bash -c "/home/dpagent/dataprovagent/bin/agentcli.sh --replicationSetup`
+
+   ```bash
+   ************************************************************
+               Remote Source Replication Setup Tool
+   ************************************************************
+   1. Oracle Replication Setup
+   2. Microsoft SQL Server Replication Setup
+   3. DB2 Replication Setup
+   q. Quit
+   b. Back
+   ************************************************************
+   Enter Option:
+   ************************************************************
+   ```
+
+2. Select option 1 (`Oracle Replication Setup`.)
+
+   ```bash
+   ************************************************************
+                     Oracle Replication Setup
+   ************************************************************
+   1. Config Oracle Connection Info
+   2. Oracle Replication Precheck
+   3. List Open Transactions
+   4. Create An Oracle User With All Permissions Granted
+   5. Create Oracle Log Reader Adapter Remote Source
+   q. Quit
+   b. Back
+   ************************************************************
+   Enter Option:
+   ************************************************************
+
+3. Select option 1 (`Config Oracle Connection Info`).  Provide the following parameters:
+
+   |Parameter|Value|
+   |---|---|
+   |Use SSL|`false`|
+   |Multitenant Database|`false`|
+   |Use LDAP Authentication|`false`|
+   |Host|`oracle`|
+   |Port Number|`1521`|
+   |Database Name|`ORCLCDB`|
+   |Service Name|`ORCLCDB.localdomain`|
+   |User Name|`SYS`|`Oradoc_db1`|
+
+   You should receive a confirmation message:
+
+   ```bash
+   ************************************************************
+   Oracle connection setup -- success!
+   ************************************************************
+   Operation execution -- success!
+   ************************************************************
+   ```
+
+4. And finally, we will use this tool to create the Oracle LogReader user and grant a lot of the required permissions needed for replication.  Select option 4 (`Create An Oracle user With All Permissions Granted`.)  Provide the following parameters:
+
+   |Parameter|Values|
+   |---|---|
+   |New Oracle Username (Case Sensitive)|`C##LR_USER`|
+   |New Oracle User's Password (Case Sensitive)|`HXEHana1`|
+   |SYS User Password|`Oradoc_db1`|
+
+   You should receive a confirmation message:
+
+   ```txt
+   ************************************************************
+   Creating User Name: C##LR_USER
+   Creating User Password: HXEHana1
+   ************************************************************
+   ************************************************************
+   Oracle user creation -- success!
+   ************************************************************
+   Operation execution -- success!
+   ************************************************************
+   ```
+
+5. At this point, we are done with the Replication Setup tool.  If you have deviated from this example, you may wish to run option 5 (`Create Oracle Log Reader Adapter Remote Source`) yourself.  If you run through that option, note that the Remote Source script that the tool creates will be located in the `/tmp` directory in the filesystem of the Data Provisioning Agent container.
+
+6. In the `HXE` HANA Tenant DB as `SYSTEM`, run the following SQL in HANA Studio or `hdbsql`:
+
+   ***NOTE:*** If you decided to call your data provisioining agent name something besides `dpagent_dpagent` or your password or user something else, modify those pieces in the XML below.
 
 ```sql
--- Change DB parameters
-SHUTDOWN IMMEDIATE;
-STARTUP MOUNT;
-ALTER DATABASE ARCHIVELOG;
---SQL> ALTER DATABASE OPEN;
+CREATE REMOTE SOURCE "oracle" ADAPTER "OracleLogReaderAdapter" AT LOCATION AGENT "dpagent_dpagent" CONFIGURATION
+'<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ConnectionProperties name="configurations">
+<PropertyEntry name="pds_database_name">ORCLCDB</PropertyEntry>
+<PropertyEntry name="cdb_enabled">false</PropertyEntry>
+<PropertyEntry name="keep_supplemental_logging_on_table">false</PropertyEntry>
+<PropertyEntry name="pdb_supplemental_logging_level">database</PropertyEntry>
+<PropertyEntry name="lr_max_op_queue_size">1000</PropertyEntry>
+<PropertyEntry name="lr_deferred_rescan_enabled">false</PropertyEntry>
+<PropertyEntry name="remarksReporting">false</PropertyEntry>
+<PropertyEntry name="pds_port_number">1521</PropertyEntry>
+<PropertyEntry name="lr_max_session_cache_size">1000</PropertyEntry>
+<PropertyEntry name="pds_use_ldap">false</PropertyEntry>
+<PropertyEntry name="skip_lr_errors">false</PropertyEntry>
+<PropertyEntry name="pds_host_name">oracle</PropertyEntry>
+<PropertyEntry name="pdb_dflt_column_repl">true</PropertyEntry>
+<PropertyEntry name="pdb_ignore_unsupported_anydata">false</PropertyEntry>
+<PropertyEntry name="pds_retry_count">5</PropertyEntry>
+<PropertyEntry name="map_char_types_to_unicode">false</PropertyEntry>
+<PropertyEntry name="service_name">ORCLCDB.localdomain</PropertyEntry>
+<PropertyEntry name="pds_retry_timeout">10</PropertyEntry>
+<PropertyEntry name="lr_max_scan_queue_size">1000</PropertyEntry>
+<PropertyEntry name="instance_name">dpagent</PropertyEntry>
+<PropertyEntry name="pds_use_ssl">false</PropertyEntry>
+<PropertyEntry name="scan_fetch_size">10</PropertyEntry>
+<PropertyEntry name="remote_source_name">oracle999</PropertyEntry>
+<PropertyEntry name="lr_parallel_scan">false</PropertyEntry>
+<PropertyEntry name="pds_use_tnsnames">false</PropertyEntry>
+<PropertyEntry name="pds_sql_connection_pool_size">15</PropertyEntry>
+</ConnectionProperties>'
+WITH CREDENTIAL TYPE 'PASSWORD' USING
+'<CredentialEntry name="credential">
+<user>C##LR_USER</user>
+<password>HXEHana1</password>
+</CredentialEntry>';
 
--- Set up CDB Oracle User
-CREATE USER C##DPTEST2 IDENTIFIED BY HXEHana1 DEFAULT TABLESPACE SYSTEM;
-CREATE VIEW C##DPTEST2.RA_ALL_USERS_VIEW (USER#, NAME, PASSWORD, TYPE#, ASTATUS) AS SELECT USER#, NAME, NULL, TYPE#, ASTATUS FROM SYS.USER$;
-GRANT create session TO C##DPTEST2;
-GRANT create table TO C##DPTEST2;
-GRANT create view TO C##DPTEST2;
-GRANT create any trigger TO C##DPTEST2;
-GRANT create any procedure TO C##DPTEST2;
-GRANT create sequence TO C##DPTEST2;
-GRANT create synonym TO C##DPTEST2;
-ALTER USER C##DPTEST2 QUOTA 100m ON SYSTEM;
-
-GRANT CONNECT, LOGMINING TO C##DPTEST2;
-GRANT SELECT ON SYS.DBA_TABLES TO C##DPTEST2;
-GRANT SELECT ON SYS.DBA_OBJECTS TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$DATABASE TO C##DPTEST2;
-GRANT SELECT ON SYS.MLOG$ TO C##DPTEST2;
-GRANT SELECT ON SYS.DBA_TABLES;
-GRANT SELECT ON SYS.V_$LOG TO C##DPTEST2;
-GRANT EXECUTE ON SYS.DBMS_LOGMNR TO C##DPTEST2;
-GRANT SELECT ON SYS.OBJ$ TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$LOGMNR_LOGS TO C##DPTEST2;
-GRANT SELECT ON SYS.DBA_ERRORS TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$ARCHIVE_DEST TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$LOGFILE TO C##DPTEST2;
-GRANT SELECT ON SYS.SNAP$ TO C##DPTEST2;
-GRANT SELECT ON SYS.PARTOBJ$ TO C##DPTEST2;
-GRANT CREATE PROCEDURE TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$ARCHIVED_LOG TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$PARAMETER TO C##DPTEST2;
-GRANT SELECT ON SYS.TAB$ TO C##DPTEST2;
-GRANT SELECT ON SYS.INDSUBPART$ TO C##DPTEST2;
-GRANT SELECT ON SYS.SEG$;
-GRANT ALTER ANY TABLE TO C##DPTEST2;
-GRANT SELECT ON SYS.COLLECTION$ TO C##DPTEST2;
-GRANT SELECT ON SYS.TABCOMPART$ TO C##DPTEST2;
-GRANT SELECT ANY TRANSACTION TO C##DPTEST2;
-GRANT SELECT ON SYS.LOBFRAG$ TO C##DPTEST2;
-GRANT SELECT ON SYS.CDEF$ TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$LOGMNR_CONTENTS TO C##DPTEST2;
-GRANT SELECT ON SYS.GV_$SESSION TO C##DPTEST2;
-GRANT SELECT ON SYS.COLTYPE$ TO C##DPTEST2;
-GRANT SELECT ON SYS.COL$ TO C##DPTEST2;
-GRANT SELECT ON SYS.DBA_TRIGGERS TO C##DPTEST2;
-GRANT SELECT ON SYS.CON$ TO C##DPTEST2;
-GRANT SELECT ON SYS.NTAB$ TO C##DPTEST2;
-GRANT SELECT ON SYS.DEFERRED_STG$ TO C##DPTEST2;
-GRANT SELECT ON SYS.DBA_LOG_GROUPS TO C##DPTEST2;
-GRANT SELECT ON SYS.ICOL$ TO C##DPTEST2;
-GRANT SELECT ON SYS.OPQTYPE$ TO C##DPTEST2;
-GRANT SELECT ON SYS.CCOL$ TO C##DPTEST2;
-GRANT SELECT ON SYS.SEQ$ TO C##DPTEST2;
-GRANT EXECUTE ON SYS.DBMS_LOGMNR_D TO C##DPTEST2;
-GRANT SELECT ON SYS.INDCOMPART$ TO C##DPTEST2;
-GRANT SELECT ON SYS.GV_$INSTANCE TO C##DPTEST2;
-GRANT SELECT ON SYS.LOB$ TO C##DPTEST2;
-GRANT SELECT ON SYS.INDPART$ TO C##DPTEST2;
-GRANT SELECT ON SYS.TABPART$ TO C##DPTEST2;
-GRANT SELECT ON SYS.DBA_SYNONYMS TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$INSTANCE TO C##DPTEST2;
-GRANT SELECT ON SYS.ATTRIBUTE$ TO C##DPTEST2;
-GRANT SELECT ON SYS.TS$ TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$TRANSACTION TO C##DPTEST2;
-GRANT SELECT ON SYS.IND$ TO C##DPTEST2;
-GRANT SELECT ON SYS.TABSUBPART$ TO C##DPTEST2;
-GRANT SELECT ON SYS.V_$DATABASE_INCARNATION TO C##DPTEST2;
-GRANT CREATE TRIGGER TO C##DPTEST2;
-GRANT SELECT ON SYS.TYPE$ TO C##DPTEST2;
-GRANT SELECT ON SYS.LOBCOMPPART$ TO C##DPTEST2;
-GRANT SELECT ON SYS.USER$ TO C##DPTEST2; 
-GRANT SELECT ON SYS.DBA_LIBRARIES TO C##DPTEST2;
-GRANT SELECT ON SYS.SEG$ TO C##DPTEST2;
-
+-- Grant _SYS_REPO some rights so that .hdbreplicationtasks can create Virtual Tables and Remote Subscriptions.
+GRANT CREATE VIRTUAL TABLE ON REMOTE SOURCE "oracle" TO _SYS_REPO;
+GRANT CREATE REMOTE SUBSCRIPTION ON REMOTE SOURCE "oracle" TO _SYS_REPO;
 ```
 
-As DPTEST User
+At this point, you are done configuring your Oracle DB for realtime replication, set up a replication user, and created a remote source in HANA.
+
+### Create a View for LogReader User
+
+The one manual step that needs to be done for `C##LR_USER` is to create a view called `RA_ALL_USERS_VIEW`.  This can be done as `sys` in either `sqlplus` or `sqldeveloper`:
 
 ```sql
-CREATE TABLE customers  
-( customer_id number(10) NOT NULL,  
-  customer_name varchar2(50) NOT NULL,  
-  city varchar2(50)  
-);  
+CREATE VIEW C##LR_USER.RA_ALL_USERS_VIEW (USER#, NAME, PASSWORD, TYPE#, ASTATUS) AS SELECT USER#, NAME, NULL, TYPE#, ASTATUS FROM SYS.USER$;
 ```
 
-```sql
-ALTER DATABASE ADD SUPPLEMENTAL LOG DATA;
-ALTER TABLE SYS.ARGUMENT$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.ARGUMENT$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.ATTRIBUTE$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.ATTRIBUTE$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.TABPART$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.TABPART$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.SEQ$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.SEQ$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.TYPE$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.TYPE$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.INDCOMPART$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.INDCOMPART$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.LOB$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.LOB$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.TABSUBPART$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.TABSUBPART$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.OPQTYPE$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.OPQTYPE$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.RECYCLEBIN$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.RECYCLEBIN$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.SNAP$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.SNAP$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.LOBCOMPPART$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.LOBCOMPPART$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.MLOG$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.MLOG$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.INDSUBPART$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.INDSUBPART$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.NTAB$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.NTAB$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.PROCEDUREINFO$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.PROCEDUREINFO$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.COLLECTION$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.COLLECTION$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.LOBFRAG$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.LOBFRAG$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.DEFERRED_STG$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.DEFERRED_STG$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.INDPART$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.INDPART$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.COLTYPE$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.COLTYPE$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-ALTER TABLE SYS.TABCOMPART$ ADD SUPPLEMENTAL LOG DATA (PRIMARY KEY) COLUMNS;
-ALTER TABLE SYS.TABCOMPART$ ADD SUPPLEMENTAL LOG DATA (UNIQUE INDEX) COLUMNS;
-```
+### Create some dummy data in Oracle
 
-### Set Up a sqldeveloper Connection as DPTEST
-
-| Property | Value |
-| --- | --- |
-| Connection Name | Whatever you want |
-| Username | `DPTEST` (Case-sensitive) |
-| Password | `HXEHana1` |
-| Hostname | `192.168.99.100` or `localhost` or whatever host your container runs on |
-| Service name | `ORCLPDB1.localdomain` |
-
-## Set up a Remote Source from HANA Express Container to Oracle Container
-
-With your HANA Express Docker container, DP Agent container, and Oracle DB Container set up as described, you should be able to create a Remote Source as described here.
-
-### Prerequisites for this Remote Source
-
-- Running Docker Compose Stack as described previously
-- DP Agent Registered as described previously with the `OracleLogReaderAdapter` Adapter registered.
-- Can create a connection your HANA Express Tenant DB (HXE) in Eclipse HANA Tools/HANA Studio.
-
-1. In HANA Studio, expand the Provisioning section of your HANA Express system, and right-click on Remote Sources and select 'New Remote Source...'
-
-2. For a Pluggable Database, provide the following values for the properties listed below:
+Connect as `C##LR_USER` using either `sqlplus` or `sqldeveloper`.  For reference, here is an example `sqldeveloper` connection.
 
    | Property | Value |
    | --- | --- |
-   | Source Name | `oracle` or whatever you want |
-   | Adapter Name | `Oracle Log Reader` |
-   | Source Location | `agent (dpagent_dpagent)` |
-   | Host | `oracle` |
-   | Port Number | `1521` |
-   | Service Name | `ORCLPDB1.localdomain` |
-   | Credentials Mode | `Technical User` |
-   | All User Name Fields in Red (Case Sensitive) | `DPTEST` |
-   | All Password Fields in Red | `HXEHana1` |
+   | Connection Name | `LogReader user on ORCLCDB` (Or whatever you want to call it) |
+   | Username | `C##LR_USER` (Case-sensitive) |
+   | Password | `HXEHana1` |
+   | Role | `default` |
+   | Hostname | `192.168.99.100` or `localhost` or wherever your container runs |
+   | Service name | `ORCLCDB.localdomain` |
 
-   Press Control+S to Save and ensure that you get a message stating "Connection to remote source established".
+Run the following SQL Commands to create a table and a few sample entries:
 
-3. For a Container Database, provide the following values for the properties listed below:
+   ```sql
+   CREATE TABLE customers  
+   ( customer_id number(10) NOT NULL,  
+     customer_name varchar2(50) NOT NULL,  
+     city varchar2(50)  
+   );
 
-   | Property | Value |
-   | --- | --- |
-   | Source Name | `oracle` or whatever you want |
-   | Adapter Name | `Oracle Log Reader` |
-   | Source Location | `agent (dpagent_dpagent)` |
-   | Host | `oracle` |
-   | Port Number | `1521` |
-   | Service Name | `ORCLCDB` |
-   | Oracle supplemental logging level | `database` |
-   | Credentials Mode | `Technical User` |
-   | All User Name Fields in Red (Case Sensitive) | `C##DPTEST` |
-   | All Password Fields in Red | `HXEHana1` |
+   INSERT INTO customers (customer_id, customer_name, city) VALUES (1,'Mike','Memphis');
+   INSERT INTO customers (customer_id, customer_name, city) VALUES (2,'Eric','St. Louis');
+   INSERT INTO customers (customer_id, customer_name, city) VALUES (3,'Derek','Philadelphia');
 
-  You should now be able to expand the `oracle` entry under Remote Sources and see a list of Schemas, as well as see Tables under the `HR` Schema.
-  
+   COMMIT;
+   ```
+
+  You should now be able to expand the `oracle` entry under Remote Sources and see a list of Schemas, as well as see the `CUSTOMER` Table under the `C##LR_USER` Schema.  *(In a real-world use case, your data would usually be under a different DB Schema, however this is a simple example.)*
+
