@@ -42,12 +42,8 @@ Realistically in a containerized scenario, you'll simply just want to have DP Ag
 Note: This example assumes:
 
   1. You built your Docker Image called `dpagent-image`
-  
-  2. You are running an existing HANA Express (2.0 SP4 in this case) with a hostname of `hxe` and a pre-existing docker volume named `hana-db`.
 
-     *(Simply run `docker volume create hana-db` if you have not)*
-
-  3. You have a `dpserver` running on the `HXE` tenant DB.
+  2. You have a bootstrapped HANA Express container.
 
 ```yaml
 version: '2'

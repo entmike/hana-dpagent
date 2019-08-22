@@ -19,9 +19,8 @@ services:
       - 39015:39015
       - 8090:8090
     volumes:
-      - hxedev:/hana/mounts
-      - /c/Users/RHOWLES/data/hana-packages:/usr/sap/HXE/SYS/global/hdb/content
-
+      - hana-db:/hana/mounts
+      
   # Oracle 12.2 Slim DB Image
   oracle:
     image: store/oracle/database-enterprise:12.2.0.1-slim
