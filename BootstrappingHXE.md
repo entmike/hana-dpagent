@@ -23,7 +23,7 @@ This first launch basically:
       --hostname hxe \
       -v hana-db:/hana/mounts \
       -v /path/to/your/xsc/deliveryunits:/usr/sap/HXE/SYS/global/hdb/content \
-      store/saplabs/hanaexpress:2.00.040.00.20190729.1 \
+      store/saplabs/hanaexpress:2.00.045.00.20200121.1 \
       --agree-to-sap-license \
       --master-password HXEHana1
    ```
@@ -36,7 +36,7 @@ This first launch basically:
        --hostname hxe ^
        -v hana-db:/hana/mounts ^
        -v /c/Users/USERNAME/path/to/your/deliveryunits:/usr/sap/HXE/SYS/global/hdb/content ^
-       store/saplabs/hanaexpress:2.00.040.00.20190729.1 ^
+       store/saplabs/hanaexpress:2.00.045.00.20200121.1 ^
        --agree-to-sap-license ^
        --master-password HXEHana1
    ```
