@@ -49,7 +49,7 @@ In a separate terminal window with your container still running, follow these st
 
 1. Run the following command to install pre-requisites:
 
-   `docker exec -ti hxe /bin/bash -c "cd /hana/shared/HXE/global/hdb/content;/usr/sap/HXE/HDB90/exe/regi import HANA_DT_BASE.tgz  HANA_XS_BASE.tgz SAP_WATT.tgz HDC_IDE_CORE.tgz HANA_XS_EDITOR.tgz HANA_IDE_CORE.tgz HANA_XS_IDE.tgz SAPUI5_1.tgz HANAIMDP.tgz --host=hxe:39041 --user=SYSTEM --password=HXEHana1"`
+   `docker exec -ti hxe /bin/bash -c "cd /hana/shared/HXE/global/hdb/content;/usr/sap/HXE/HDB90/exe/regi import HANA_DT_BASE.tgz  HANA_XS_BASE.tgz SAP_WATT.tgz HDC_IDE_CORE.tgz HANA_XS_EDITOR.tgz HANA_IDE_CORE.tgz HANA_XS_IDE.tgz SAPUI5_1.tgz HANA_IM_DP-2.4.2-hf1 --host=hxe:39041 --user=SYSTEM --password=HXEHana1"`
 
 Once the delivery units have installed with an `Import successful` message, proceed to the next step.
 
