@@ -56,7 +56,7 @@ services:
     hostname: dpagent
 
   hxe:
-    image: store/saplabs/hanaexpress:2.00.040.00.20190729.1
+    image: store/saplabs/hanaexpress:2.00.045.00.20200121.1
     container_name: hxe
     hostname: hxe
     volumes:
@@ -100,7 +100,7 @@ services:
     hostname: dpagent
 
   hxe:
-    image: store/saplabs/hanaexpress:2.00.040.00.20190729.1
+    image: store/saplabs/hanaexpress:2.00.045.00.20200121.1
     container_name: hxe
     hostname: hxe
     volumes:
