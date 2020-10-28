@@ -1,4 +1,5 @@
 # RServe Quick Setup
+This page explains how to create a Docker Image running Rserve on R `3.5.2`.  Note that SAP may not support this version formally, however I have had no problems running it myself from HANA.  The official supported versions by SAP can be found on this Note: https://launchpad.support.sap.com/#/notes/2185029.  At the time of this writing, it claims only support to 3.2, however again, I have not had problems on `3.5.2`.
 
 ## Building your Docker Image
 
