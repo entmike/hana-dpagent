@@ -47,3 +47,26 @@ docker build -t hana-rserve:3.5.2 .
 ```bash
 docker run --rm -p 6311:6311 hana-rserve:3.5.2
 ```
+## Configure HANA to connect to RServe
+This section derived loosely from official SAP Help Documentation here: https://help.sap.com/viewer/a78d7f701c3341339fafe4031b64f015/2.0.05/en-US/49f750dbb683453f9cea5dae900d7dc6.html
+
+As `SYSTEM` user or someone with system privilege `INIFILE ADMIN`, run the following SQL.  Note, that in this example, it assumes that your rserve container has a hostname of `rserve` in this example.  Adapt as you see fit:
+
+1. Add some INI file parameters.
+```sql
+ALTER SYSTEM ALTER CONFIGURATION ('indexserver.ini', 'database') SET ('calcengine', 'cer_rserve_addresses') = 'reserve:6311' WITH RECONFIGURE;
+ALTER SYSTEM ALTER CONFIGURATION ('indexserver.ini', 'database') SET ('calcengine', 'cer_rserve_maxsendsize') = '0' WITH RECONFIGURE;
+ALTER SYSTEM ALTER CONFIGURATION ('indexserver.ini', 'database') SET ('calcengine', 'cer_timeout') = '1800' WITH RECONFIGURE;
+```
+2. Create your Remote Source
+```sql
+CREATE REMOTE SOURCE "rserve"
+    ADAPTER "rserve"
+    CONFIGURATION 'server=rserve;port=6311;ssl_mode=disabled';
+```
+Note, that if you attempt to view this Remote Source in HANA Studio under Data Provisioning, you will get a JDBC 403 error with a 'not supported' reason.  This is fine from what I can tell.
+
+3. Set your user parameter for `RSERVE` to the name of your newly created Remote Source:
+```sql
+ALTER USER SYSTEM SET PARAMETER RSERVE REMOTE SOURCES = 'rserve';
+```
