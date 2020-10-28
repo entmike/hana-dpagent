@@ -70,3 +70,26 @@ Note, that if you attempt to view this Remote Source in HANA Studio under Data P
 ```sql
 ALTER USER SYSTEM SET PARAMETER RSERVE REMOTE SOURCES = 'rserve';
 ```
+## Test Connection
+
+1. Create a simple test stored procedure:
+```sql
+CREATE PROCEDURE R_TEST( 
+	OUT result TABLE(LINE VARCHAR(2000))
+)
+LANGUAGE RLANG AS
+BEGIN
+    result <- as.data.frame(list(LINE = 'Hello World'))
+END;
+```
+
+2. Run the stored procedure:
+```sql
+DO
+	BEGIN
+	DECLARE results TABLE(LINE VARCHAR(2000));
+	CALL R_TEST(:results);
+	SELECT * FROM :results;
+END;
+```
+If successful, you should receive a `Hello World` back from RServe.
